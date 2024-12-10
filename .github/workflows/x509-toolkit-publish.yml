@@ -1,0 +1,43 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: x509-toolkit - Publish
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+    paths:
+      - x509_toolkit/**
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+
+      - name: Change working directory
+        run: cd ./x509_toolkit
+
+      - name: Install, Test, Build, Deploy
+        run: |
+          cd ./x509_toolkit
+          poetry version $(git describe --tags --abbrev=0)
+          poetry install
+          rm -rf ./dist
+          poetry export -f requirements.txt > requirements.txt
+          poetry build
+          poetry publish
+        env:
+          POETRY_PYPI_TOKEN_PYPI: "${{ secrets.PYPI_TOKEN }}"
